@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cotação de Moedas</title>
+    {% load static %} {# Isso é essencial para carregar arquivos estáticos do Django #}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}"> {# Link para seu CSS externo #}
+
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://code.highcharts.com/modules/exporting.js"></script>
+    <script src="https://code.highcharts.com/modules/export-data.js"></script>
+    <script src="https://code.highcharts.com/modules/accessibility.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Cotação Dólar (USD) vs. BRL, EUR, JPY</h1>
+
+        <div class="controls">
+            <label for="startDate">Data Início:</label>
+            <input type="date" id="startDate">
+            <label for="endDate">Data Fim:</label>
+            <input type="date" id="endDate">
+            <button onclick="fetchDataAndRenderChart()">Consultar</button>
+        </div>
+
+        <div id="chart-container"></div>
+        <p id="message" class="message"></p>
+    </div>
+
+    {# Carregue seu script.js AQUI, logo antes do fechamento do </body> #}
+    {# Isso garante que os elementos HTML (como startDate, endDate) já existem quando o script tenta acessá-los #}
+    <script src="{% static 'js/script.js' %}"></script>
+</body>
+</html>
