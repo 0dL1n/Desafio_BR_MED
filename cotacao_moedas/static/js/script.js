@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Verifica a preferência do usuário ao carregar a página
     // e aplica o tema salvo (ou o padrão claro se não houver preferência)
     const savedDarkMode = localStorage.getItem('darkMode');
-    if (darkModeToggle) { // CORREÇÃO: Garante que o elemento existe antes de tentar manipulá-lo
+    if (darkModeToggle) { // Garante que o elemento existe antes de tentar manipulá-lo
         if (savedDarkMode === 'true') {
             darkModeToggle.checked = true; // Marca o checkbox se o modo escuro estava salvo
             applyTheme(true);
@@ -44,7 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 
-    // --- Lógica de Cotação (cálculo de datas iniciais e chamada da API) ---
+    // --- Lógica de Cotação (cálculo de datas iniciais) ---
 
     // Define as datas padrão para os campos de entrada
     const today = new Date();
@@ -57,9 +57,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentCheckDate = new Date(today);
     let validDates = []; // Array para armazenar as datas úteis encontradas
 
-    // CORREÇÃO: daysOffset deve ser inicializado UMA VEZ neste escopo.
-    // Remover qualquer outra declaração 'let daysOffset = 0;' dentro do loop 'while'.
-    let daysOffset = 0; // Esta é a declaração correta para o loop abaixo.
+    // daysOffset deve ser inicializado UMA VEZ neste escopo.
+    let daysOffset = 0;
 
     // Loop para encontrar os 5 últimos dias úteis (para o período padrão)
     while (validDates.length < 5 && daysOffset < maxDaysToLookBack) {
@@ -87,8 +86,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Formata as datas para o padrão %Y-%m-%d para preencher os campos de input
-    // NOTE: Esta função foi declarada DENTRO do DOMContentLoaded,
-    // o que é ok, mas se fosse usada fora, precisaria ser global.
+    // Esta função é declarada DENTRO do DOMContentLoaded.
     const formatDate = (date) => {
         const year = date.getFullYear();
         const month = String(date.getMonth() + 1).padStart(2, '0'); // Mês é base 0
@@ -101,8 +99,9 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('endDate').value = formatDate(endDate);
 
     // Carrega o gráfico com os dados iniciais assim que a página é carregada
-    fetchDataAndRenderChart();
-});
+    fetchDataAndRenderChart(); // CHAMADA CORRETA para a função definida ABAIXO
+
+}); // Fim do DOMContentLoaded
 
 
 // --- Funções Auxiliares para o Dark Mode do Highcharts ---
@@ -191,72 +190,76 @@ function updateHighchartsTheme(isDarkMode) {
 // --- Funções para Fetch de Dados e Renderização do Gráfico ---
 
 // Função principal para buscar dados da API do Django e renderizar o gráfico
+// Esta função é definida GLOBALMENTE para ser acessível pelo onclick no HTML
 function fetchDataAndRenderChart() {
     const startDate = document.getElementById('startDate').value;
     const endDate = document.getElementById('endDate').value;
     const messageElement = document.getElementById('message');
-    messageElement.textContent = ''; // Limpa mensagens anteriores na tela
+    const loadingSpinner = document.getElementById('loadingSpinner'); // Pegar o elemento do spinner
 
-    // Validação básica se as datas foram selecionadas
+    messageElement.textContent = ''; // Limpa mensagens anteriores
+
+    // MOSTRAR o spinner e esconder o contêiner do gráfico e a mensagem
+    loadingSpinner.style.display = 'block';
+    document.getElementById('chart-container').style.display = 'none'; // Esconde o gráfico enquanto carrega
+    messageElement.style.display = 'none'; // Esconde a mensagem enquanto carrega
+
     if (!startDate || !endDate) {
         messageElement.textContent = 'Por favor, selecione as datas de início e fim.';
+        messageElement.style.display = 'block'; // Mostra a mensagem de erro
+        loadingSpinner.style.display = 'none'; // Esconde o spinner
+        document.getElementById('chart-container').style.display = 'block'; // Mostra o gráfico (vazio ou anterior)
         return;
     }
 
     // Faz a requisição assíncrona (AJAX) para o endpoint da API do Django
     fetch(`/api/cotacoes/?start_date=${startDate}&end_date=${endDate}`)
         .then(response => {
-            // Se a resposta HTTP não for bem-sucedida (ex: 400 Bad Request, 500 Internal Server Error)
             if (!response.ok) {
-                // Tenta ler o JSON de erro do backend e lança um erro JavaScript
                 return response.json().then(errorData => {
                     throw new Error(errorData.error || 'Erro desconhecido na API.');
                 });
             }
-            // Se a resposta for OK, converte-a para JSON
             return response.json();
         })
         .then(data => {
-            // Se o backend enviar uma mensagem (ex: "Nenhum dado encontrado")
+            // ESCONDER o spinner e mostrar o contêiner do gráfico e mensagem
+            loadingSpinner.style.display = 'none';
+            document.getElementById('chart-container').style.display = 'block';
+            messageElement.style.display = 'block'; // Mostra a mensagem (se houver)
+
             if (data.message) {
                 messageElement.textContent = data.message;
-                renderEmptyChart(); // Renderiza um gráfico vazio ou com a mensagem
+                renderEmptyChart();
                 return;
             }
 
-            // Se não houver datas nos dados retornados, também exibe mensagem de ausência de dados
             if (!data.dates || data.dates.length === 0) {
                 messageElement.textContent = 'Nenhum dado de cotação disponível para o período selecionado.';
                 renderEmptyChart();
                 return;
             }
 
-            // Mapeia os dados recebidos para o formato que o Highcharts espera (arrays de séries)
             const seriesData = [
-                {
-                    name: 'BRL',
-                    data: data.BRL.map(val => val !== null ? val : null) // Mapeia para null se o valor for nulo
-                },
-                {
-                    name: 'EUR',
-                    data: data.EUR.map(val => val !== null ? val : null)
-                },
-                {
-                    name: 'JPY',
-                    data: data.JPY.map(val => val !== null ? val : null)
-                }
+                { name: 'BRL', data: data.BRL.map(val => val !== null ? val : null) },
+                { name: 'EUR', data: data.EUR.map(val => val !== null ? val : null) },
+                { name: 'JPY', data: data.JPY.map(val => val !== null ? val : null) }
             ];
 
-            // Chama a função para renderizar o gráfico com os dados obtidos
             renderChart(data.dates, seriesData);
         })
         .catch(error => {
-            // Captura e exibe qualquer erro que ocorra durante o fetch ou processamento
+            // ESCONDER o spinner e mostrar o contêiner do gráfico e mensagem em caso de erro
+            loadingSpinner.style.display = 'none';
+            document.getElementById('chart-container').style.display = 'block';
+            messageElement.style.display = 'block'; // Mostra a mensagem de erro
+
             console.error('Erro ao buscar dados:', error);
             messageElement.textContent = `Erro ao carregar cotações: ${error.message}`;
             renderEmptyChart();
         });
-} 
+} // FIM da função fetchDataAndRenderChart()
+
 
 // Função para renderizar o gráfico Highcharts com os dados fornecidos
 function renderChart(dates, seriesData) {

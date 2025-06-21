@@ -1,5 +1,30 @@
 /* static/css/style.css */
 
+/* Estilos para o Loading Spinner */
+.loading-spinner {
+    display: none; /* Inicia oculto */
+    text-align: center;
+    margin-top: 20px;
+    color: var(--text-color-light); /* Para se adaptar ao dark mode */
+    font-size: 1.1em;
+}
+
+.loading-spinner .spinner {
+    border: 4px solid var(--border-color-light); /* Cor da borda do spinner */
+    border-top: 4px solid var(--button-bg-light); /* Cor da "linha" do spinner */
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    animation: spin 1s linear infinite; /* Animação de giro */
+    margin: 0 auto 10px auto; /* Centraliza o spinner e dá um espaço */
+}
+
+/* Animação de giro para o spinner */
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
 /* Variáveis de cor para Light Mode (padrão) */
 :root {
     --bg-color-light: #f4f4f4;
