@@ -3,7 +3,7 @@ from django.shortcuts import render
 from django.http import JsonResponse
 from datetime import datetime, timedelta
 from .services import VatComplyService
-from .models import Cotacao # NOVO: Importa o seu modelo Cotacao
+from .models import Cotacao 
 
 def index(request):
     """

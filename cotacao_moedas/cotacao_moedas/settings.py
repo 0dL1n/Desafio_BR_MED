@@ -10,10 +10,10 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 import os
-from pathlib import Path # Já importado, ótimo!
+from pathlib import Path
+import dj_database_url
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-# CORREÇÃO: Definir BASE_DIR como um objeto Path desde o início.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
@@ -21,12 +21,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-q%!3#oijk*!!=bzf#nwm93rs@+vah=#8&%0jt0qbrsq$s_v(sp'
+SECRET_KEY = os.environ.get('SECRET_KEY', 'um_valor_secreto_temporario_para_desenvolvimento_muito_longo_e_seguro')
+# ^^^^^^^^^^ GERE ESTA CHAVE COM: python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '.render.com']
 
 
 # Application definition
@@ -37,12 +38,14 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
+    'whitenoise.runserver_nostatic', # Para servir estáticos em dev com Whitenoise
     'django.contrib.staticfiles',
-    'core', # Confirmado que está aqui!
+    'core',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware', # Para servir estáticos em produção com Whitenoise
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -56,8 +59,7 @@ ROOT_URLCONF = 'cotacao_moedas.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        # CONFIRMADO: Esta linha aponta para sua pasta 'templates' na raiz do projeto.
-        'DIRS': [BASE_DIR / 'templates'], # Usando o objeto Path para consistência
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -76,12 +78,20 @@ WSGI_APPLICATION = 'cotacao_moedas.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3', # Usando o objeto Path para consistência
+# Configuração do Banco de Dados para Produção (usando dj_database_url)
+DATABASE_URL = os.environ.get('DATABASE_URL')
+if DATABASE_URL:
+    DATABASES = {
+        'default': dj_database_url.config(default=DATABASE_URL, conn_max_age=600)
     }
-}
+else:
+    # Se não houver DATABASE_URL (para desenvolvimento local)
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 
 # Password validation
@@ -119,16 +129,13 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = 'static/'
-
-# CORREÇÃO: STATIC_ROOT deve ser o diretório onde os arquivos estáticos serão coletados para produção.
-# Certifique-se de que este diretório exista antes de rodar collectstatic em produção.
-STATIC_ROOT = BASE_DIR / 'staticfiles'
-
+STATIC_ROOT = BASE_DIR / 'staticfiles' 
 STATICFILES_DIRS = [
-    # CORREÇÃO: Removendo a redundância. Apenas uma forma de apontar para sua pasta 'static'.
-    # Este é o diretório onde você armazena seus arquivos estáticos no desenvolvimento.
-    BASE_DIR / 'static',
+    BASE_DIR / 'static', 
 ]
+# Para servir arquivos estáticos de forma eficiente em produção (com Whitenoise)
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
