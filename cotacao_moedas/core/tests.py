@@ -11,13 +11,13 @@ class VatComplyServiceTestCase(TestCase):
     def setUp(self):
         self.service = VatComplyService()
 
-    @patch('requests.get') # Correção do caminho do patch
+    @patch('requests.get') 
     def test_get_daily_rates_success(self, mock_get):
         # simula a resposta da API
         mock_response = {
             "date": "2024-01-01",
             "base": "USD",
-            "rates": { # As chaves devem estar no dicionário 'rates'
+            "rates": { 
                 "BRL": 5.25,
                 "EUR": 0.85,
                 "JPY": 110.0
@@ -27,7 +27,7 @@ class VatComplyServiceTestCase(TestCase):
         mock_get.return_value.status_code = 200
         mock_get.return_value.raise_for_status.return_value = None
 
-        target_date = date(2024, 1, 1) # Ajustado para corresponder à data mockada
+        target_date = date(2024, 1, 1) 
         rates = self.service.get_daily_rates(target_date)
 
         self.assertIsNotNone(rates)
@@ -36,7 +36,7 @@ class VatComplyServiceTestCase(TestCase):
         self.assertEqual(rates['rates']['EUR'], 0.85) # AssertEqual para verificar valor
         self.assertEqual(rates['rates']['JPY'], 110.0) # AssertEqual para verificar valor
 
-    @patch('requests.get') # Correção do caminho do patch
+    @patch('requests.get') 
     def test_get_daily_rates_failure(self, mock_get):
         # simula erro na API
         # mock.get.return_value.status_code = 404 # Corrigido: 'mock_get', não 'mock'
@@ -47,7 +47,7 @@ class VatComplyServiceTestCase(TestCase):
         rates = self.service.get_daily_rates(test_date)
         self.assertIsNone(rates)
 
-    @patch('core.services.VatComplyService.get_daily_rates') # Correção do typo 'sevices'
+    @patch('core.services.VatComplyService.get_daily_rates') 
     def test_get_rates_for_period(self, mock_get_daily_rates):
         # Simula a resposta da API para várias datas
         mock_get_daily_rates.side_effect = [
